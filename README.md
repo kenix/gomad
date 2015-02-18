@@ -1,0 +1,2 @@
+# gomad
+Golang Madness
