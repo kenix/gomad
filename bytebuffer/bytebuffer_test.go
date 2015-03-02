@@ -325,10 +325,11 @@ func TestBytesRead(t *testing.T) {
 
 func TestOrder(t *testing.T) {
 	bb := New(2)
-	checkIntOrder(t, bb, binary.BigEndian, 0x1122, 0x11, 0x22)
+	x := uint16(0x1122)
+	checkIntOrder(t, bb, binary.BigEndian, x, 0x22, 0x11)
 
 	bb.OrderTo(binary.LittleEndian)
-	checkIntOrder(t, bb, binary.LittleEndian, 0x1122, 0x22, 0x11)
+	checkIntOrder(t, bb, binary.LittleEndian, x, 0x11, 0x22)
 }
 
 func checkIntOrder(t *testing.T, bb *ByteBuffer, order binary.ByteOrder,
@@ -391,6 +392,7 @@ func checkErrCase(t *testing.T, expectedErr error, f func()) {
 func TestUint16Access(t *testing.T) {
 	cases := []uint16{0, 1, 32767, 32768, math.MaxUint16}
 	bb := New(len(cases) * 2)
+	bb.OrderTo(binary.LittleEndian)
 
 	for _, c := range cases {
 		bb.PutUint16(c)

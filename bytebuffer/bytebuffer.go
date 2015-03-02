@@ -12,6 +12,7 @@ import "C"
 import (
 	bi "encoding/binary"
 	"errors"
+	"fmt"
 	"io"
 	us "unsafe"
 )
@@ -28,6 +29,11 @@ type ByteBuffer struct {
 	limit    int
 	mark     int
 	order    bi.ByteOrder
+}
+
+func (bb *ByteBuffer) String() string {
+	return fmt.Sprintf("%v;P%d;L%d;M%d;%v",
+		bb.buf, bb.position, bb.limit, bb.mark, bb.order)
 }
 
 // Binary denotes something that has bytes
@@ -233,9 +239,10 @@ func (bb *ByteBuffer) PutUint16(i uint16) *ByteBuffer {
 		panic(ErrOverflow)
 	}
 	if bb.order == bi.LittleEndian {
-		C.memset(bb.pos(), us.Pointer(&(i<<8 | i>>8)), 2)
+		ui := i<<8 | i>>8
+		C.memmove(bb.pos(), us.Pointer(&ui), 2)
 	} else {
-		C.memset(bb.pos(), us.Pointer(&i), 2)
+		C.memmove(bb.pos(), us.Pointer(&i), 2)
 	}
 	bb.position += 2
 	return bb
@@ -263,10 +270,10 @@ func (bb *ByteBuffer) PutUint32(i uint32) *ByteBuffer {
 		panic(ErrOverflow)
 	}
 	if bb.order == bi.LittleEndian {
-		C.memset(bb.pos(), us.Pointer(&(i<<24 | i<<8&uint32(BM16_24) |
-			i>>8&uint32(BM08_16) | i>>24)), 4)
+		ui := i<<24 | i<<8&uint32(BM16_24) | i>>8&uint32(BM08_16) | i>>24
+		C.memmove(bb.pos(), us.Pointer(&ui), 4)
 	} else {
-		C.memset(bb.pos(), us.Pointer(&i), 4)
+		C.memmove(bb.pos(), us.Pointer(&i), 4)
 	}
 	bb.position += 4
 	return bb
@@ -294,11 +301,12 @@ func (bb *ByteBuffer) PutUint64(i uint64) *ByteBuffer {
 		panic(ErrOverflow)
 	}
 	if bb.order == bi.LittleEndian {
-		C.memset(bb.pos(), us.Pointer(&(i<<56 | i<<40&BM48_56 |
+		ui := i<<56 | i<<40&BM48_56 |
 			i<<24&BM40_48 | i<<8&BM32_40 | i>>8&BM24_32 |
-			i>>24&BM16_24 | i>>40&BM08_16 | i>>56)), 8)
+			i>>24&BM16_24 | i>>40&BM08_16 | i>>56
+		C.memmove(bb.pos(), us.Pointer(&ui), 8)
 	} else {
-		C.memset(bb.pos(), us.Pointer(&i), 8)
+		C.memmove(bb.pos(), us.Pointer(&i), 8)
 	}
 	bb.position += 8
 	return bb
@@ -324,7 +332,7 @@ func (bb *ByteBuffer) GetUint64() uint64 {
 // advances position by the total length of dat, panics if dat type is not
 // supported or this ByteBuffer cannot hold all of dat.
 func (bb *ByteBuffer) PutAll(dat ...interface{}) *ByteBuffer {
-	if bb.position+lenOf(dat) > cap(bb.buf) {
+	if bb.position+lenOf(dat...) > cap(bb.buf) {
 		panic(ErrOverflow)
 	}
 	for _, v := range dat {
