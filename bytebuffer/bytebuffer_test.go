@@ -389,7 +389,7 @@ func checkErrCase(t *testing.T, expectedErr error, f func()) {
 }
 
 func TestUint16Access(t *testing.T) {
-	cases := []uint16{0, 1, 32765, 32768, math.MaxUint16}
+	cases := []uint16{0, 1, 32767, 32768, math.MaxUint16}
 	bb := New(len(cases) * 2)
 
 	for _, c := range cases {
