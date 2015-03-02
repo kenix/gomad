@@ -1,15 +1,12 @@
 /*
-	Package bytebuffer contains implementation of ByteBuffer similar to Java.
+	Package bytebuffer contains implementation of ByteBuffer similar to
+	ByteBuffer in JDK.
 */
 package bytebuffer
 
 /*
 #include <stdlib.h>
 #include <string.h>
-
-char at(char* addr){
-	return *addr;
-}
 */
 import "C"
 import (
@@ -21,7 +18,7 @@ import (
 
 // ByteBuffer is a fix-sized buffer of bytes with Read and Write methods. Bytes
 // are read and written as are, whereas wider unsigned integers are read and
-// written according to this ByteBuffer's byte order.
+// written according to this ByteBuffer's byte order, which defaults to BigEndian
 //
 // Reading operations are performed from position to limit.
 // Writing operations are performed from position to capacity.
@@ -45,6 +42,17 @@ var ErrLimit = errors.New("bytebuffer: invalid limit")
 var ErrMark = errors.New("bytebuffer: mark undefined")
 var ErrType = errors.New("bytebuffer: unsupported type")
 
+const (
+	BM00_08 = uint64(0x00000000000000FF) << (iota << 3)
+	BM08_16
+	BM16_24
+	BM24_32
+	BM32_40
+	BM40_48
+	BM48_56
+	BM56_64
+)
+
 // New creates and initializes a new ByteBuffer with the given fixed size.
 func New(size int) *ByteBuffer {
 	return &ByteBuffer{make([]byte, size, size), 0, size, -1, bi.BigEndian}
@@ -56,9 +64,7 @@ func Wrap(bb []byte) *ByteBuffer {
 }
 
 // Order returns the underlying byte order
-func (bb *ByteBuffer) Order() bi.ByteOrder {
-	return bb.order
-}
+func (bb *ByteBuffer) Order() bi.ByteOrder { return bb.order }
 
 // OrderTo sets the underlying byte order to o
 func (bb *ByteBuffer) OrderTo(o bi.ByteOrder) *ByteBuffer {
@@ -67,12 +73,10 @@ func (bb *ByteBuffer) OrderTo(o bi.ByteOrder) *ByteBuffer {
 }
 
 // Position returns the position from which Read and Write are performed.
-func (bb *ByteBuffer) Position() int {
-	return bb.position
-}
+func (bb *ByteBuffer) Position() int { return bb.position }
 
 // PositionTo sets the position to p, panics if p is negative or greater than
-// this ByteBuffer's limit.
+// this ByteBuffer's limit. Mark is discarded if set and greater than p.
 func (bb *ByteBuffer) PositionTo(p int) *ByteBuffer {
 	if p < 0 || p > bb.limit {
 		panic(ErrPosition)
@@ -101,12 +105,11 @@ func (bb *ByteBuffer) Reset() *ByteBuffer {
 }
 
 // Limit returns this ByteBuffer's limit.
-func (bb *ByteBuffer) Limit() int {
-	return bb.limit
-}
+func (bb *ByteBuffer) Limit() int { return bb.limit }
 
 // LimitTo sets the limit to l, panics if l is negative or greater than this
-// ByteBuffer's capacity.
+// ByteBuffer's capacity. Position is set to l if greater than l. Mark is
+// discarded if set and greater than l.
 func (bb *ByteBuffer) LimitTo(l int) *ByteBuffer {
 	if l < 0 || l > cap(bb.buf) {
 		panic(ErrLimit)
@@ -123,9 +126,7 @@ func (bb *ByteBuffer) LimitTo(l int) *ByteBuffer {
 
 // Capacity returns the capacity of this ByteBuffer. It determines how many
 // bytes this ByteBuffer can hold.
-func (bb *ByteBuffer) Capacity() int {
-	return cap(bb.buf)
-}
+func (bb *ByteBuffer) Capacity() int { return cap(bb.buf) }
 
 // Clear sets this ByteBuffer's cursor states back as it was created. Its
 // content is not touched.
@@ -149,16 +150,10 @@ func (bb *ByteBuffer) Compact() *ByteBuffer {
 	return bb
 }
 
-func (bb *ByteBuffer) addr() us.Pointer {
-	return us.Pointer(&bb.buf[0])
-}
+func (bb *ByteBuffer) addr() us.Pointer { return us.Pointer(&bb.buf[0]) }
 
 func (bb *ByteBuffer) pos() us.Pointer {
 	return us.Pointer(uintptr(bb.addr()) + uintptr(bb.position))
-}
-
-func (bb *ByteBuffer) asCharA() *C.char {
-	return (*C.char)(bb.pos())
 }
 
 // Flip sets limit to position, position to 0 and discards mark, readies this
@@ -179,14 +174,10 @@ func (bb *ByteBuffer) Rewind() *ByteBuffer {
 }
 
 // Remaining returns the number of bytes between position and limit.
-func (bb *ByteBuffer) Remaining() int {
-	return bb.limit - bb.position
-}
+func (bb *ByteBuffer) Remaining() int { return bb.limit - bb.position }
 
 // HasRamaining denotes if there are any bytes between position and limit.
-func (bb *ByteBuffer) HasRemaining() bool {
-	return bb.Remaining() > 0
-}
+func (bb *ByteBuffer) HasRemaining() bool { return bb.Remaining() > 0 }
 
 // Put writes one byte into this ByteBuffer at the current position and advances
 // position by one, panics if capacity is reached.
@@ -200,14 +191,14 @@ func (bb *ByteBuffer) Put(b byte) *ByteBuffer {
 }
 
 // PutN writes len(s) bytes in s into this ByteBuffer from the current position
-// and advances position by the len(s), panics if less tha len(s) left for writing.
+// and advances position by the len(s), panics if less than len(s) left for writing.
 func (bb *ByteBuffer) PutN(s []byte) *ByteBuffer {
-	l := len(s)
-	if bb.position+l > cap(bb.buf) {
+	length := len(s)
+	if bb.position+length > cap(bb.buf) {
 		panic(ErrOverflow)
 	}
-	C.memmove(bb.pos(), us.Pointer(&s[0]), C.size_t(l))
-	bb.position += l
+	C.memmove(bb.pos(), us.Pointer(&s[0]), C.size_t(length))
+	bb.position += length
 	return bb
 }
 
@@ -217,7 +208,8 @@ func (bb *ByteBuffer) Get() byte {
 	if bb.Remaining() < 1 {
 		panic(ErrUnderflow)
 	}
-	b := byte(C.at(bb.asCharA()))
+	var b byte
+	C.memmove(us.Pointer(&b), bb.pos(), 1)
 	bb.position += 1
 	return b
 }
@@ -241,38 +233,27 @@ func (bb *ByteBuffer) PutUint16(i uint16) *ByteBuffer {
 		panic(ErrOverflow)
 	}
 	if bb.order == bi.LittleEndian {
-		C.memset(bb.pos(), C.int(byte(i)), 1)
-		bb.position += 1
-		C.memset(bb.pos(), C.int(byte(i>>8)), 1)
-		bb.position += 1
+		C.memset(bb.pos(), us.Pointer(&(i<<8 | i>>8)), 2)
 	} else {
-		C.memset(bb.pos(), C.int(byte(i>>8)), 1)
-		bb.position += 1
-		C.memset(bb.pos(), C.int(byte(i)), 1)
-		bb.position += 1
+		C.memset(bb.pos(), us.Pointer(&i), 2)
 	}
+	bb.position += 2
 	return bb
 }
 
 // GetUint16 returns an uint16 from the current position and advances position
 // by 2, panics if less than 2 bytes left for reading.
 func (bb *ByteBuffer) GetUint16() uint16 {
-	if bb.position+2 > bb.limit {
+	if bb.Remaining() < 2 {
 		panic(ErrUnderflow)
 	}
-	ui := uint16(0)
+	var i uint16
+	C.memmove(us.Pointer(&i), bb.pos(), 2)
+	bb.position += 2
 	if bb.order == bi.LittleEndian {
-		ui |= uint16(C.at(bb.asCharA()))
-		bb.position += 1
-		ui |= uint16(C.at(bb.asCharA())) << 8
-		bb.position += 1
-	} else {
-		ui |= uint16(C.at(bb.asCharA())) << 8
-		bb.position += 1
-		ui |= uint16(C.at(bb.asCharA()))
-		bb.position += 1
+		return i<<8 | i>>8
 	}
-	return ui
+	return i
 }
 
 // PutUint32 writes i into this ByteBuffer from the current position and
@@ -282,54 +263,28 @@ func (bb *ByteBuffer) PutUint32(i uint32) *ByteBuffer {
 		panic(ErrOverflow)
 	}
 	if bb.order == bi.LittleEndian {
-		C.memset(bb.pos(), C.int(byte(i)), 1)
-		bb.position += 1
-		C.memset(bb.pos(), C.int(byte(i>>8)), 1)
-		bb.position += 1
-		C.memset(bb.pos(), C.int(byte(i>>16)), 1)
-		bb.position += 1
-		C.memset(bb.pos(), C.int(byte(i>>24)), 1)
-		bb.position += 1
+		C.memset(bb.pos(), us.Pointer(&(i<<24 | i<<8&uint32(BM16_24) |
+			i>>8&uint32(BM08_16) | i>>24)), 4)
 	} else {
-		C.memset(bb.pos(), C.int(byte(i>>24)), 1)
-		bb.position += 1
-		C.memset(bb.pos(), C.int(byte(i>>16)), 1)
-		bb.position += 1
-		C.memset(bb.pos(), C.int(byte(i>>8)), 1)
-		bb.position += 1
-		C.memset(bb.pos(), C.int(byte(i)), 1)
-		bb.position += 1
+		C.memset(bb.pos(), us.Pointer(&i), 4)
 	}
+	bb.position += 4
 	return bb
 }
 
 // GetUint32 returns an uint32 from the current position and advances position
 // by 4, panics if less than 4 bytes left for reading.
 func (bb *ByteBuffer) GetUint32() uint32 {
-	if bb.position+4 > bb.limit {
+	if bb.Remaining() < 4 {
 		panic(ErrUnderflow)
 	}
-	ui := uint32(0)
+	var i uint32
+	C.memmove(us.Pointer(&i), bb.pos(), 4)
+	bb.position += 4
 	if bb.order == bi.LittleEndian {
-		ui |= uint32(C.at(bb.asCharA()))
-		bb.position += 1
-		ui |= uint32(C.at(bb.asCharA())) << 8
-		bb.position += 1
-		ui |= uint32(C.at(bb.asCharA())) << 16
-		bb.position += 1
-		ui |= uint32(C.at(bb.asCharA())) << 24
-		bb.position += 1
-	} else {
-		ui |= uint32(C.at(bb.asCharA())) << 24
-		bb.position += 1
-		ui |= uint32(C.at(bb.asCharA())) << 16
-		bb.position += 1
-		ui |= uint32(C.at(bb.asCharA())) << 8
-		bb.position += 1
-		ui |= uint32(C.at(bb.asCharA()))
-		bb.position += 1
+		return i<<24 | i<<8&uint32(BM16_24) | i>>8&uint32(BM08_16) | i>>24
 	}
-	return ui
+	return i
 }
 
 // PutUint64 writes i into this ByteBuffer from the current position and
@@ -339,95 +294,41 @@ func (bb *ByteBuffer) PutUint64(i uint64) *ByteBuffer {
 		panic(ErrOverflow)
 	}
 	if bb.order == bi.LittleEndian {
-		C.memset(bb.pos(), C.int(byte(i)), 1)
-		bb.position += 1
-		C.memset(bb.pos(), C.int(byte(i>>8)), 1)
-		bb.position += 1
-		C.memset(bb.pos(), C.int(byte(i>>16)), 1)
-		bb.position += 1
-		C.memset(bb.pos(), C.int(byte(i>>24)), 1)
-		bb.position += 1
-		C.memset(bb.pos(), C.int(byte(i>>32)), 1)
-		bb.position += 1
-		C.memset(bb.pos(), C.int(byte(i>>40)), 1)
-		bb.position += 1
-		C.memset(bb.pos(), C.int(byte(i>>48)), 1)
-		bb.position += 1
-		C.memset(bb.pos(), C.int(byte(i>>56)), 1)
-		bb.position += 1
+		C.memset(bb.pos(), us.Pointer(&(i<<56 | i<<40&BM48_56 |
+			i<<24&BM40_48 | i<<8&BM32_40 | i>>8&BM24_32 |
+			i>>24&BM16_24 | i>>40&BM08_16 | i>>56)), 8)
 	} else {
-		C.memset(bb.pos(), C.int(byte(i>>56)), 1)
-		bb.position += 1
-		C.memset(bb.pos(), C.int(byte(i>>48)), 1)
-		bb.position += 1
-		C.memset(bb.pos(), C.int(byte(i>>40)), 1)
-		bb.position += 1
-		C.memset(bb.pos(), C.int(byte(i>>32)), 1)
-		bb.position += 1
-		C.memset(bb.pos(), C.int(byte(i>>24)), 1)
-		bb.position += 1
-		C.memset(bb.pos(), C.int(byte(i>>16)), 1)
-		bb.position += 1
-		C.memset(bb.pos(), C.int(byte(i>>8)), 1)
-		bb.position += 1
-		C.memset(bb.pos(), C.int(byte(i)), 1)
-		bb.position += 1
+		C.memset(bb.pos(), us.Pointer(&i), 8)
 	}
+	bb.position += 8
 	return bb
 }
 
 // GetUint64 returns an uint64 from the current position and advances position
 // by 8, panics if less than 8 bytes left for reading.
 func (bb *ByteBuffer) GetUint64() uint64 {
-	if bb.position+8 > bb.limit {
+	if bb.Remaining() < 8 {
 		panic(ErrUnderflow)
 	}
-	ui := uint64(0)
+	var i uint64
+	C.memmove(us.Pointer(&i), bb.pos(), 8)
+	bb.position += 8
 	if bb.order == bi.LittleEndian {
-		ui |= uint64(C.at(bb.asCharA()))
-		bb.position += 1
-		ui |= uint64(C.at(bb.asCharA())) << 8
-		bb.position += 1
-		ui |= uint64(C.at(bb.asCharA())) << 16
-		bb.position += 1
-		ui |= uint64(C.at(bb.asCharA())) << 24
-		bb.position += 1
-		ui |= uint64(C.at(bb.asCharA())) << 32
-		bb.position += 1
-		ui |= uint64(C.at(bb.asCharA())) << 40
-		bb.position += 1
-		ui |= uint64(C.at(bb.asCharA())) << 48
-		bb.position += 1
-		ui |= uint64(C.at(bb.asCharA())) << 56
-		bb.position += 1
-	} else {
-		ui |= uint64(C.at(bb.asCharA())) << 56
-		bb.position += 1
-		ui |= uint64(C.at(bb.asCharA())) << 48
-		bb.position += 1
-		ui |= uint64(C.at(bb.asCharA())) << 40
-		bb.position += 1
-		ui |= uint64(C.at(bb.asCharA())) << 32
-		bb.position += 1
-		ui |= uint64(C.at(bb.asCharA())) << 24
-		bb.position += 1
-		ui |= uint64(C.at(bb.asCharA())) << 16
-		bb.position += 1
-		ui |= uint64(C.at(bb.asCharA())) << 8
-		bb.position += 1
-		ui |= uint64(C.at(bb.asCharA()))
-		bb.position += 1
+		return i<<56 | i<<40&BM48_56 | i<<24&BM40_48 | i<<8&BM32_40 |
+			i>>8&BM24_32 | i>>24&BM16_24 | i>>40&BM08_16 | i>>56
 	}
-	return ui
+	return i
 }
 
 // PutAll writes the given dat into this ByteBuffer from the current position
 // advances position by the total length of dat, panics if dat type is not
-// supported or this ByteBuffer cannot hold all of dat, which can result in
-// partial write as for now.
+// supported or this ByteBuffer cannot hold all of dat.
 func (bb *ByteBuffer) PutAll(dat ...interface{}) *ByteBuffer {
-	for _, val := range dat {
-		switch t := val.(type) {
+	if bb.position+lenOf(dat) > cap(bb.buf) {
+		panic(ErrOverflow)
+	}
+	for _, v := range dat {
+		switch t := v.(type) {
 		case byte:
 			bb.Put(t)
 		case []byte:
@@ -440,11 +341,32 @@ func (bb *ByteBuffer) PutAll(dat ...interface{}) *ByteBuffer {
 			bb.PutUint64(t)
 		case Binary:
 			bb.PutN(t.Bytes())
+		}
+	}
+	return bb
+}
+
+func lenOf(dat ...interface{}) int {
+	n := 0
+	for _, v := range dat {
+		switch t := v.(type) {
+		case byte:
+			n += 1
+		case []byte:
+			n += len(t)
+		case uint16:
+			n += 2
+		case uint32:
+			n += 4
+		case uint64:
+			n += 8
+		case Binary:
+			n += len(t.Bytes())
 		default:
 			panic(ErrType)
 		}
 	}
-	return bb
+	return n
 }
 
 func min(a, b int) int {
