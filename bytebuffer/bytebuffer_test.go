@@ -327,14 +327,14 @@ func TestBytesRead(t *testing.T) {
 func TestOrder(t *testing.T) {
 	bb := New(2)
 	x := uint16(0x1122)
-	bb.OrderTo(binary.LittleEndian)
-	checkIntOrder(t, bb, binary.LittleEndian, x, 0x22, 0x11)
+	bb.OrderTo(bi.LittleEndian)
+	checkIntOrder(t, bb, bi.LittleEndian, x, 0x22, 0x11)
 
-	bb.OrderTo(binary.BigEndian)
-	checkIntOrder(t, bb, binary.BigEndian, x, 0x11, 0x22)
+	bb.OrderTo(bi.BigEndian)
+	checkIntOrder(t, bb, bi.BigEndian, x, 0x11, 0x22)
 }
 
-func checkIntOrder(t *testing.T, bb *ByteBuffer, order binary.ByteOrder,
+func checkIntOrder(t *testing.T, bb *ByteBuffer, order bi.ByteOrder,
 	ui uint16, c, d byte) {
 	bb.Clear()
 	bb.PutUint16(ui)
@@ -365,7 +365,7 @@ func TestWrap(t *testing.T) {
 func TestByteAccess(t *testing.T) {
 	cases := []byte{0, 1, 127, 128, 255}
 	bb := New(5)
-	bb.OrderTo(binary.LittleEndian)
+	bb.OrderTo(bi.LittleEndian)
 
 	for _, c := range cases {
 		bb.Put(c)
@@ -394,7 +394,7 @@ func checkErrCase(t *testing.T, expectedErr error, f func()) {
 func TestUint16Access(t *testing.T) {
 	cases := []uint16{0, 1, 32767, 32768, math.MaxUint16}
 	bb := New(len(cases) * 2)
-	bb.OrderTo(binary.LittleEndian)
+	bb.OrderTo(bi.LittleEndian)
 
 	for _, c := range cases {
 		bb.PutUint16(c)
@@ -579,11 +579,11 @@ func checkCursors(t *testing.T, bb *ByteBuffer, capacity, position, limit int) {
 func TestByteOrder(t *testing.T) {
 	ui := uint16(0x1122)
 	if byte(0x22) == (*[2]byte)(us.Pointer(&ui))[0] {
-		if ByteOrder() != bi.LittleEndian {
+		if ByteOrder != bi.LittleEndian {
 			t.Errorf("wanted %v, got %v\n", bi.LittleEndian, ByteOrder)
 		}
 	} else {
-		if ByteOrder() != bi.BigEndian {
+		if ByteOrder != bi.BigEndian {
 			t.Errorf("wanted %v, got %v\n", bi.BigEndian, ByteOrder)
 		}
 	}
