@@ -2,10 +2,11 @@ package bytebuffer
 
 import (
 	"bytes"
-	"encoding/binary"
+	bi "encoding/binary"
 	"fmt"
 	"math"
 	"testing"
+	us "unsafe"
 )
 
 func BenchmarkPut(b *testing.B) {
@@ -326,10 +327,11 @@ func TestBytesRead(t *testing.T) {
 func TestOrder(t *testing.T) {
 	bb := New(2)
 	x := uint16(0x1122)
-	checkIntOrder(t, bb, binary.BigEndian, x, 0x22, 0x11)
-
 	bb.OrderTo(binary.LittleEndian)
-	checkIntOrder(t, bb, binary.LittleEndian, x, 0x11, 0x22)
+	checkIntOrder(t, bb, binary.LittleEndian, x, 0x22, 0x11)
+
+	bb.OrderTo(binary.BigEndian)
+	checkIntOrder(t, bb, binary.BigEndian, x, 0x11, 0x22)
 }
 
 func checkIntOrder(t *testing.T, bb *ByteBuffer, order binary.ByteOrder,
@@ -571,5 +573,18 @@ func checkCursors(t *testing.T, bb *ByteBuffer, capacity, position, limit int) {
 	}
 	if bb.Limit() != limit {
 		t.Errorf("Limit: wanted: %d, got: %d\n", limit, bb.Limit())
+	}
+}
+
+func TestByteOrder(t *testing.T) {
+	ui := uint16(0x1122)
+	if byte(0x22) == (*[2]byte)(us.Pointer(&ui))[0] {
+		if ByteOrder() != bi.LittleEndian {
+			t.Errorf("wanted %v, got %v\n", bi.LittleEndian, ByteOrder)
+		}
+	} else {
+		if ByteOrder() != bi.BigEndian {
+			t.Errorf("wanted %v, got %v\n", bi.BigEndian, ByteOrder)
+		}
 	}
 }

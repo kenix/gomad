@@ -19,7 +19,8 @@ import (
 
 // ByteBuffer is a fix-sized buffer of bytes with Read and Write methods. Bytes
 // are read and written as are, whereas wider unsigned integers are read and
-// written according to this ByteBuffer's byte order, which defaults to BigEndian
+// written according to this ByteBuffer's byte order, which defaults to the
+// platform's endianness.
 //
 // Reading operations are performed from position to limit.
 // Writing operations are performed from position to capacity.
@@ -32,8 +33,8 @@ type ByteBuffer struct {
 }
 
 func (bb *ByteBuffer) String() string {
-	return fmt.Sprintf("%v;P%d;L%d;M%d;%v",
-		bb.buf, bb.position, bb.limit, bb.mark, bb.order)
+	return fmt.Sprintf("P%d;C%d;L%dM%d;%v;%v",
+		bb.position, cap(bb.buf), bb.limit, bb.mark, bb.order, bb.buf)
 }
 
 // Binary denotes something that has bytes
@@ -59,14 +60,27 @@ const (
 	BM56_64
 )
 
+// ByteOrder is the underlying platform's endianness.
+var ByteOrder bi.ByteOrder
+
+func init() {
+	// determine underlying platform's endianness
+	ui := uint16(1)
+	if 1 == (*[2]byte)(us.Pointer(&ui))[0] {
+		ByteOrder = bi.LittleEndian
+	} else {
+		ByteOrder = bi.BigEndian
+	}
+}
+
 // New creates and initializes a new ByteBuffer with the given fixed size.
 func New(size int) *ByteBuffer {
-	return &ByteBuffer{make([]byte, size, size), 0, size, -1, bi.BigEndian}
+	return &ByteBuffer{make([]byte, size, size), 0, size, -1, ByteOrder}
 }
 
 // Wrap creates a new ByteBuffer with content in bb
 func Wrap(bb []byte) *ByteBuffer {
-	return &ByteBuffer{bb, 0, len(bb), -1, bi.BigEndian}
+	return &ByteBuffer{bb, 0, len(bb), -1, ByteOrder}
 }
 
 // Order returns the underlying byte order
@@ -238,7 +252,7 @@ func (bb *ByteBuffer) PutUint16(i uint16) *ByteBuffer {
 	if bb.position+2 > cap(bb.buf) {
 		panic(ErrOverflow)
 	}
-	if bb.order == bi.LittleEndian {
+	if bb.order != ByteOrder {
 		ui := i<<8 | i>>8
 		C.memmove(bb.pos(), us.Pointer(&ui), 2)
 	} else {
@@ -257,7 +271,7 @@ func (bb *ByteBuffer) GetUint16() uint16 {
 	var i uint16
 	C.memmove(us.Pointer(&i), bb.pos(), 2)
 	bb.position += 2
-	if bb.order == bi.LittleEndian {
+	if bb.order != ByteOrder {
 		return i<<8 | i>>8
 	}
 	return i
@@ -269,7 +283,7 @@ func (bb *ByteBuffer) PutUint32(i uint32) *ByteBuffer {
 	if bb.position+4 > cap(bb.buf) {
 		panic(ErrOverflow)
 	}
-	if bb.order == bi.LittleEndian {
+	if bb.order != ByteOrder {
 		ui := i<<24 | i<<8&uint32(BM16_24) | i>>8&uint32(BM08_16) | i>>24
 		C.memmove(bb.pos(), us.Pointer(&ui), 4)
 	} else {
@@ -288,7 +302,7 @@ func (bb *ByteBuffer) GetUint32() uint32 {
 	var i uint32
 	C.memmove(us.Pointer(&i), bb.pos(), 4)
 	bb.position += 4
-	if bb.order == bi.LittleEndian {
+	if bb.order != ByteOrder {
 		return i<<24 | i<<8&uint32(BM16_24) | i>>8&uint32(BM08_16) | i>>24
 	}
 	return i
@@ -300,7 +314,7 @@ func (bb *ByteBuffer) PutUint64(i uint64) *ByteBuffer {
 	if bb.position+8 > cap(bb.buf) {
 		panic(ErrOverflow)
 	}
-	if bb.order == bi.LittleEndian {
+	if bb.order != ByteOrder {
 		ui := i<<56 | i<<40&BM48_56 |
 			i<<24&BM40_48 | i<<8&BM32_40 | i>>8&BM24_32 |
 			i>>24&BM16_24 | i>>40&BM08_16 | i>>56
@@ -321,7 +335,7 @@ func (bb *ByteBuffer) GetUint64() uint64 {
 	var i uint64
 	C.memmove(us.Pointer(&i), bb.pos(), 8)
 	bb.position += 8
-	if bb.order == bi.LittleEndian {
+	if bb.order != ByteOrder {
 		return i<<56 | i<<40&BM48_56 | i<<24&BM40_48 | i<<8&BM32_40 |
 			i>>8&BM24_32 | i>>24&BM16_24 | i>>40&BM08_16 | i>>56
 	}
