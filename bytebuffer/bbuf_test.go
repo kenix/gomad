@@ -10,172 +10,207 @@ import (
 )
 
 func BenchmarkPut(b *testing.B) {
-	bb := New(1 << 20)
-	for i := 0; i < b.N; i++ {
-		if !bb.HasRemaining() {
-			bb.Clear()
+	benchmarkPut(b, New(1<<20), byte(math.MaxUint8))
+}
+
+func benchmarkPut(b *testing.B, bb ByteBuffer, d interface{}) {
+	switch t := d.(type) {
+	case byte:
+		for i := 0; i < b.N; i++ {
+			if !bb.HasRemaining() {
+				bb.Clear()
+			}
+			bb.Put(t)
 		}
-		bb.Put(math.MaxUint8)
+	case uint16:
+		for i := 0; i < b.N; i++ {
+			if !bb.HasRemaining() {
+				bb.Clear()
+			}
+			bb.PutUint16(t)
+		}
+	case uint32:
+		for i := 0; i < b.N; i++ {
+			if !bb.HasRemaining() {
+				bb.Clear()
+			}
+			bb.PutUint32(t)
+			b.SetBytes(4)
+		}
+	case uint64:
+		for i := 0; i < b.N; i++ {
+			if !bb.HasRemaining() {
+				bb.Clear()
+			}
+			bb.PutUint64(t)
+			b.SetBytes(8)
+		}
+	case []byte:
+		for i := 0; i < b.N; i++ {
+			if !bb.HasRemaining() {
+				bb.Clear()
+			}
+			bb.PutN(t)
+			b.SetBytes(int64(len(t)))
+		}
+	default:
+		b.Errorf("no support for %T\n", t)
 	}
 }
 
 func BenchmarkGet(b *testing.B) {
-	bb := New(1 << 20)
+	benchmarkGet(b, New(1<<20), byte(math.MaxUint8))
+}
+
+func benchmarkGet(b *testing.B, bb ByteBuffer, d interface{}) {
+	n := 0
+	for bb.HasRemaining() {
+		switch t := d.(type) {
+		case byte:
+			bb.Put(t)
+		case uint16:
+			bb.PutUint16(t)
+		case uint32:
+			bb.PutUint32(t)
+		case uint64:
+			bb.PutUint64(t)
+		case []byte:
+			bb.PutN(t)
+			n = len(t)
+		default:
+			b.Errorf("no support for %T\n", t)
+		}
+	}
+	bb.Flip()
+
+	b.ResetTimer()
+	switch t := d.(type) {
+	case byte:
+		for i := 0; i < b.N; i++ {
+			if !bb.HasRemaining() {
+				bb.Flip()
+			}
+			bb.Get()
+		}
+	case uint16:
+		for i := 0; i < b.N; i++ {
+			if !bb.HasRemaining() {
+				bb.Flip()
+			}
+			bb.GetUint16()
+		}
+	case uint32:
+		for i := 0; i < b.N; i++ {
+			if !bb.HasRemaining() {
+				bb.Flip()
+			}
+			bb.GetUint32()
+			b.SetBytes(4)
+		}
+	case uint64:
+		for i := 0; i < b.N; i++ {
+			if !bb.HasRemaining() {
+				bb.Flip()
+			}
+			bb.GetUint64()
+			b.SetBytes(8)
+		}
+	case []byte:
+		for i := 0; i < b.N; i++ {
+			if !bb.HasRemaining() {
+				bb.Flip()
+			}
+			bb.GetN(n)
+			b.SetBytes(int64(n))
+		}
+	default:
+		b.Errorf("no support for %T\n", t)
+	}
+}
+
+func benchmarkRead(b *testing.B, bb ByteBuffer, size int) {
 	for bb.HasRemaining() {
 		bb.Put(math.MaxUint8)
 	}
 	bb.Flip()
 
-	for i := 0; i < b.N; i++ {
-		if !bb.HasRemaining() {
-			bb.Flip()
-		}
-		bb.Get()
-	}
-}
-
-func BenchmarkPutUint16(b *testing.B) {
-	bb := New(1 << 20)
-	for i := 0; i < b.N; i++ {
-		if !bb.HasRemaining() {
-			bb.Clear()
-		}
-		bb.PutUint16(math.MaxUint16)
-	}
-}
-
-func BenchmarkGetUint16(b *testing.B) {
-	bb := New(1 << 20)
-	for bb.HasRemaining() {
-		bb.PutUint16(math.MaxUint16)
-	}
-	bb.Flip()
-
-	for i := 0; i < b.N; i++ {
-		if !bb.HasRemaining() {
-			bb.Flip()
-		}
-		bb.GetUint16()
-	}
-}
-
-func BenchmarkPutUint32(b *testing.B) {
-	bb := New(1 << 20)
-	for i := 0; i < b.N; i++ {
-		if !bb.HasRemaining() {
-			bb.Clear()
-		}
-		bb.PutUint32(math.MaxUint32)
-	}
-}
-
-func BenchmarkGetUint32(b *testing.B) {
-	bb := New(1 << 20)
-	for bb.HasRemaining() {
-		bb.PutUint32(math.MaxUint32)
-	}
-	bb.Flip()
-
-	for i := 0; i < b.N; i++ {
-		if !bb.HasRemaining() {
-			bb.Flip()
-		}
-		bb.GetUint32()
-	}
-}
-
-func BenchmarkPutUint64(b *testing.B) {
-	bb := New(1 << 20)
-	for i := 0; i < b.N; i++ {
-		if !bb.HasRemaining() {
-			bb.Clear()
-		}
-		bb.PutUint64(math.MaxUint64)
-	}
-}
-
-func BenchmarkGetUint64(b *testing.B) {
-	bb := New(1 << 20)
-	for bb.HasRemaining() {
-		bb.PutUint64(math.MaxUint64)
-	}
-	bb.Flip()
-
-	for i := 0; i < b.N; i++ {
-		if !bb.HasRemaining() {
-			bb.Flip()
-		}
-		bb.GetUint64()
-	}
-}
-
-func BenchmarkPutN(b *testing.B) {
-	bb := New(1 << 20)
-	s := make([]byte, 1024)
-	for i := range s {
-		s[i] = math.MaxUint8
-	}
-	for i := 0; i < b.N; i++ {
-		if !bb.HasRemaining() {
-			bb.Clear()
-		}
-		bb.PutN(s)
-	}
-}
-
-func getN(b *testing.B, x int) {
-	bb := New(1 << 20)
-	for bb.HasRemaining() {
-		bb.Put(1)
-	}
-	bb.Flip()
-
-	for i := 0; i < b.N; i++ {
-		if !bb.HasRemaining() {
-			bb.Flip()
-		}
-		bb.GetN(x)
-	}
-}
-
-func BenchmarkGet512B(b *testing.B) {
-	getN(b, 1<<9)
-}
-
-func BenchmarkGet1K(b *testing.B) {
-	getN(b, 1<<10)
-}
-
-func BenchmarkGet32K(b *testing.B) {
-	getN(b, 1<<15)
-}
-
-func readN(b *testing.B, x int) {
-	bb := New(1 << 20)
-	for bb.HasRemaining() {
-		bb.Put(1)
-	}
-	bb.Flip()
-
-	s := make([]byte, x)
+	s := make([]byte, size)
+	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		if !bb.HasRemaining() {
 			bb.Flip()
 		}
 		bb.Read(s)
+		b.SetBytes(int64(size))
 	}
 }
 
-func BenchmarkRead512B(b *testing.B) {
-	readN(b, 1<<9)
+func BenchmarkPutUint16(b *testing.B) {
+	benchmarkPut(b, New(1<<20), uint16(math.MaxUint16))
 }
 
-func BenchmarkRead1K(b *testing.B) {
-	readN(b, 1<<10)
+func BenchmarkGetUint16(b *testing.B) {
+	benchmarkGet(b, New(1<<20), uint16(math.MaxUint16))
 }
 
-func BenchmarkRead32K(b *testing.B) {
-	readN(b, 1<<15)
+func BenchmarkPutUint32(b *testing.B) {
+	benchmarkPut(b, New(1<<20), uint32(math.MaxUint32))
+}
+
+func BenchmarkGetUint32(b *testing.B) {
+	benchmarkGet(b, New(1<<20), uint32(math.MaxUint32))
+}
+
+func BenchmarkPutUint64(b *testing.B) {
+	benchmarkPut(b, New(1<<20), uint64(math.MaxUint64))
+}
+
+func BenchmarkGetUint64(b *testing.B) {
+	benchmarkGet(b, New(1<<20), uint64(math.MaxUint64))
+}
+
+func makeSlice(size int) []byte {
+	s := make([]byte, size)
+	for i := range s {
+		s[i] = math.MaxUint8
+	}
+	return s
+}
+
+func BenchmarkPut16(b *testing.B) {
+	benchmarkPut(b, New(1<<20), makeSlice(16))
+}
+
+func BenchmarkPut32(b *testing.B) {
+	benchmarkPut(b, New(1<<20), makeSlice(32))
+}
+
+func BenchmarkPut64(b *testing.B) {
+	benchmarkPut(b, New(1<<20), makeSlice(64))
+}
+
+func BenchmarkGet16(b *testing.B) {
+	benchmarkGet(b, New(1<<20), makeSlice(16))
+}
+
+func BenchmarkGet32(b *testing.B) {
+	benchmarkGet(b, New(1<<20), makeSlice(32))
+}
+
+func BenchmarkGet64(b *testing.B) {
+	benchmarkGet(b, New(1<<20), makeSlice(64))
+}
+
+func BenchmarkRead16(b *testing.B) {
+	benchmarkRead(b, New(1<<20), 16)
+}
+
+func BenchmarkRead32(b *testing.B) {
+	benchmarkRead(b, New(1<<20), 32)
+}
+
+func BenchmarkRead64(b *testing.B) {
+	benchmarkRead(b, New(1<<20), 64)
 }
 
 func TestPutAll(t *testing.T) {
@@ -285,7 +320,10 @@ func TestWithReader(t *testing.T) {
 func TestBytesWrite(t *testing.T) {
 	bb := New(16)
 	bb.Put(1)
-	n := bb.Write([]byte{2, 3, 4, 5})
+	n, err := bb.Write([]byte{2, 3, 4, 5})
+	if err != nil {
+		t.FailNow()
+	}
 	if n != 4 {
 		t.FailNow()
 	}
@@ -334,7 +372,7 @@ func TestOrder(t *testing.T) {
 	checkIntOrder(t, bb, bi.BigEndian, x, 0x11, 0x22)
 }
 
-func checkIntOrder(t *testing.T, bb *ByteBuffer, order bi.ByteOrder,
+func checkIntOrder(t *testing.T, bb ByteBuffer, order bi.ByteOrder,
 	ui uint16, c, d byte) {
 	bb.Clear()
 	bb.PutUint16(ui)
@@ -564,7 +602,7 @@ func TestCompact(t *testing.T) {
 	}
 }
 
-func checkCursors(t *testing.T, bb *ByteBuffer, capacity, position, limit int) {
+func checkCursors(t *testing.T, bb ByteBuffer, capacity, position, limit int) {
 	if bb.Capacity() != capacity {
 		t.Errorf("Capacity: wanted: %d, got: %d\n", capacity, bb.Capacity())
 	}
