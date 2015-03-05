@@ -9,6 +9,14 @@ import (
 	us "unsafe"
 )
 
+func BenchmarkPut_S(b *testing.B) {
+	s := []byte(nil)
+	for i := 0; i < b.N; i++ {
+		s = append(s, byte(math.MaxUint8))
+	}
+	b.ReportAllocs()
+}
+
 func BenchmarkPut(b *testing.B) {
 	benchmarkPut(b, New(1<<20), byte(math.MaxUint8))
 }
@@ -56,6 +64,7 @@ func benchmarkPut(b *testing.B, bb ByteBuffer, d interface{}) {
 	default:
 		b.Errorf("no support for %T\n", t)
 	}
+	b.ReportAllocs()
 }
 
 func BenchmarkGet(b *testing.B) {
@@ -126,6 +135,7 @@ func benchmarkGet(b *testing.B, bb ByteBuffer, d interface{}) {
 	default:
 		b.Errorf("no support for %T\n", t)
 	}
+	b.ReportAllocs()
 }
 
 func benchmarkRead(b *testing.B, bb ByteBuffer, size int) {
@@ -143,6 +153,7 @@ func benchmarkRead(b *testing.B, bb ByteBuffer, size int) {
 		bb.Read(s)
 		b.SetBytes(int64(size))
 	}
+	b.ReportAllocs()
 }
 
 func BenchmarkPutUint16(b *testing.B) {
