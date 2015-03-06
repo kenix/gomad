@@ -7,3 +7,4 @@ type Sieve interface {
 var SieveEratosthenes Sieve = &eratosthenes{}
 var SieveEratosthenesO Sieve = &eratosthenes_o{}
 var SieveAtkin Sieve = &atkin{}
+var SieveSundaram Sieve = &sundaram{}
