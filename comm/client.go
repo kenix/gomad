@@ -3,7 +3,7 @@ package comm
 import (
 	"net"
 
-	"github.com/mentopolis/gomad/util"
+	"github.com/kenix/gomad/util"
 )
 
 type Client struct {

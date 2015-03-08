@@ -1,7 +1,7 @@
 package inversion
 
 import (
-	"github.com/mentopolis/gomad/util"
+	"github.com/kenix/gomad/util"
 	"testing"
 )
 

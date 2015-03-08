@@ -7,9 +7,9 @@ import (
 	"sync"
 	"time"
 
-	bb "github.com/mentopolis/gomad/bytebuffer"
-	sp "github.com/mentopolis/gomad/supplier"
-	"github.com/mentopolis/gomad/util"
+	bb "github.com/kenix/gomad/bytebuffer"
+	sp "github.com/kenix/gomad/supplier"
+	"github.com/kenix/gomad/util"
 )
 
 type Server struct {

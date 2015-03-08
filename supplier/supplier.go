@@ -1,7 +1,7 @@
 package supplier
 
 import (
-	"github.com/mentopolis/gomad/bytebuffer"
+	"github.com/kenix/gomad/bytebuffer"
 )
 
 type Supplier interface {
