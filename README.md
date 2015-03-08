@@ -1,6 +1,6 @@
 # gomad
 #### Golang Madness
-Michael learns to Go! A journey from extreme Java to mad Golang.
+Mike learns to Go! A journey from extreme Java to mad Golang.
 * Practices with Golang
     * Prime sieves
     * Counting inversions (similarity, left, right and split inversions)
@@ -11,6 +11,7 @@ Michael learns to Go! A journey from extreme Java to mad Golang.
 	* object.oriented vs. functional
 	* setter methods vs. `xxxTo`
 	* honor the interfaces in common packages like `io`
-* TCP communication in Go
+    * impl. based on `slice`: w/ or w/o re-slicing benchmark comparison: how to make it faster? Too much overhead with cgo
+* TCP communication in Golang
 	* infinite data server (financial ticks)
 	* data client
