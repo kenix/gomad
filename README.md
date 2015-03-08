@@ -1,13 +1,16 @@
 # gomad
 #### Golang Madness
 Michael learns to Go! A journey from extreme Java to mad Golang.
-* A battle between `ByteBuffer/StringBuilder` and `slice/bytes.Buffer`
-	* fixed size `ByteBuffer` vs. dynamic size `slice`
-	* panic with error vs. multiple return value including error
-	* method chaining vs. `append` and `copy`
+* Practices with Golang
+    * Prime sieves
+    * Counting inversions (similarity, left, right and split inversions)
+* A take on `ByteBuffer/StringBuilder` and `slice/bytes.Buffer`
+	* fix-sized `ByteBuffer` vs. dynamically sized `slice`
+	* panic with error vs. multiple return values including error
+	* method chaining vs. `append` and `copy` or util method with interface{}
 	* object.oriented vs. functional
 	* setter methods vs. `xxxTo`
-	* honor the interfaces in `io` package
-* Ticks in Go
-	* infinite tick server
-	* tick client
+	* honor the interfaces in common packages like `io`
+* TCP communication in Go
+	* infinite data server (financial ticks)
+	* data client
