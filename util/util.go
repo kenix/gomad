@@ -3,7 +3,17 @@ package util
 import (
 	"io"
 	"log"
+	"math/rand"
+	"time"
 )
+
+func Shuffle(a []int64) {
+	rand.Seed(time.Now().UnixNano())
+	for i := range a {
+		j := rand.Intn(i + 1)
+		a[i], a[j] = a[j], a[i]
+	}
+}
 
 func GoNonBlocking(f func() interface{}) (ch chan interface{}) {
 	go func() {

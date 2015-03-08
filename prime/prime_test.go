@@ -37,6 +37,22 @@ func BenchmarkAll_10000_EratosthenesO(b *testing.B) {
 	benchmarkAll(b, SieveEratosthenesO, 10000)
 }
 
+func BenchmarkAll_10_Sundaram(b *testing.B) {
+	benchmarkAll(b, SieveSundaram, 10)
+}
+
+func BenchmarkAll_100_Sundaram(b *testing.B) {
+	benchmarkAll(b, SieveSundaram, 100)
+}
+
+func BenchmarkAll_1000_Sundaram(b *testing.B) {
+	benchmarkAll(b, SieveSundaram, 1000)
+}
+
+func BenchmarkAll_10000_Sundaram(b *testing.B) {
+	benchmarkAll(b, SieveSundaram, 10000)
+}
+
 func benchmarkAll(b *testing.B, ps Sieve, upTo uint64) {
 	for i := 0; i < b.N; i++ {
 		ch := ps.All(upTo)
@@ -56,6 +72,10 @@ func TestAll_10_EratosthenesO(t *testing.T) {
 
 func TestAll_10_Atkin(t *testing.T) {
 	testAll(t, SieveAtkin, 10)
+}
+
+func TestAll_10_Sundaram(t *testing.T) {
+	testAll(t, SieveSundaram, 10)
 }
 
 func testAll(t *testing.T, ps Sieve, upTo uint64) {
