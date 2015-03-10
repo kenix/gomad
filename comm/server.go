@@ -52,6 +52,7 @@ func (srv *Server) accept(listener net.Listener) {
 				return
 			}
 			util.Le.Println(err)
+			continue
 		}
 		util.Li.Printf("got connection from %s\n", conn.RemoteAddr())
 		dc := DualChan{make(chan []byte), make(chan []byte)}

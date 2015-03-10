@@ -4,6 +4,7 @@ import (
 	"io"
 	"log"
 	"math/rand"
+	"os"
 	"time"
 )
 
@@ -31,6 +32,15 @@ var Lw *log.Logger
 var Le *log.Logger
 var Lf *log.Logger
 var Lc *log.Logger
+
+func init() {
+	Lt = log.New(os.Stderr, "T ", log.LstdFlags|log.Lshortfile)
+	Li = log.New(os.Stderr, "I ", log.LstdFlags|log.Lshortfile)
+	Lw = log.New(os.Stderr, "W ", log.LstdFlags|log.Lshortfile)
+	Le = log.New(os.Stderr, "E ", log.LstdFlags|log.Lshortfile)
+	Lf = log.New(os.Stderr, "F ", log.LstdFlags|log.Lshortfile)
+	Lc = log.New(os.Stderr, "C ", log.LstdFlags|log.Lshortfile)
+}
 
 func InitLoggers(w io.Writer) {
 	Lt = log.New(w, "T ", log.LstdFlags|log.Lshortfile)
