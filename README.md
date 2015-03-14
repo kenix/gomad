@@ -1,7 +1,8 @@
 # gomad
 #### Golang Madness
-Mike learns to Go! A journey from extreme Java to mad Golang.
+Mike learns to Go! A journey from Java to Golang.
 * Practices with Golang
+    * Closest pairs
     * Prime sieves
     * Counting inversions (similarity, left, right and split inversions)
 * A take on `ByteBuffer/StringBuilder` and `slice/bytes.Buffer`
