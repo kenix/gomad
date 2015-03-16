@@ -47,6 +47,6 @@ func snd(conn net.Conn, dat []byte) (int, error) {
 		}
 		sent += n
 	}
-	util.Lt.Printf("sent %d byte(s) to %s\n", sent, conn.RemoteAddr())
+	// util.Lt.Printf("sent %d byte(s) to %s\n", sent, conn.RemoteAddr())
 	return sent, nil
 }
