@@ -2,8 +2,40 @@ package util
 
 import (
 	"math"
+	"reflect"
 	"testing"
 )
+
+func TestSort(t *testing.T) {
+	cases := []struct {
+		in  []int
+		out []int
+	}{
+		{
+			[]int{3, 9, 8, 2, 5, 7, 1, 6, 4},
+			[]int{1, 2, 3, 4, 5, 6, 7, 8, 9},
+		},
+		{
+			[]int{3, 8, 2, 5, 9, 7, 1, 6, 4},
+			[]int{1, 2, 3, 4, 5, 6, 7, 8, 9},
+		},
+		{
+			[]int{9, 8, 7, 6, 5, 4, 3, 2, 1},
+			[]int{1, 2, 3, 4, 5, 6, 7, 8, 9},
+		},
+		{
+			[]int{1, 2, 3, 4, 5, 6, 7, 8, 9},
+			[]int{1, 2, 3, 4, 5, 6, 7, 8, 9},
+		},
+	}
+
+	for _, c := range cases {
+		QuickSort(c.in)
+		if !reflect.DeepEqual(c.in, c.out) {
+			t.Errorf("wanted %v, got %v\n", c.out, c.in)
+		}
+	}
+}
 
 func BenchmarkLeadingZeros(b *testing.B) {
 	s := []interface{}{byte(1), int8(1), uint16(1), int16(1), uint16(1),

@@ -8,6 +8,41 @@ import (
 	"time"
 )
 
+func QuickSort(a []int) {
+	sort(a, 0, len(a))
+}
+
+func sort(a []int, from, to int) {
+	if to-from <= 1 {
+		return
+	}
+	p := partition(a, from, to)
+	if p > from {
+		sort(a, from, p)
+	}
+	if p < to {
+		sort(a, p+1, to)
+	}
+}
+
+func partition(a []int, from, to int) int {
+	m := (from + to) >> 1
+	if a[from] > a[m] {
+		a[from], a[m] = a[m], a[from]
+	}
+	i := from + 1
+	for j := from + 1; j < to; j++ {
+		if a[j] < a[from] {
+			if i != j {
+				a[i], a[j] = a[j], a[i]
+			}
+			i++
+		}
+	}
+	a[from], a[i-1] = a[i-1], a[from]
+	return i - 1
+}
+
 func Shuffle(a []int64) {
 	rand.Seed(time.Now().UnixNano())
 	for i := range a {
