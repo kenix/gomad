@@ -39,7 +39,9 @@ func partition(a []int, from, to int) int {
 			i++
 		}
 	}
-	a[from], a[i-1] = a[i-1], a[from]
+	if from != i-1 {
+		a[from], a[i-1] = a[i-1], a[from]
+	}
 	return i - 1
 }
 
