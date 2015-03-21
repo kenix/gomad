@@ -26,10 +26,8 @@ func sort(a []int, from, to int) {
 }
 
 func partition(a []int, from, to int) int {
-	m := (from + to) >> 1
-	if a[from] > a[m] {
-		a[from], a[m] = a[m], a[from]
-	}
+	m := from + rand.Intn(to-from)
+	a[from], a[m] = a[m], a[from]
 	i := from + 1
 	for j := from + 1; j < to; j++ {
 		if a[j] < a[from] {
