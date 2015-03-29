@@ -8,6 +8,17 @@ import (
 	"time"
 )
 
+func Op(s string) (string, time.Time) {
+	log.Printf("timer>>%s\n", s)
+	return s, time.Now()
+}
+
+func Time(s string, startTime time.Time) {
+	elapsed := time.Since(startTime)
+	log.Printf("timer<<%s %.3f ms\n",
+		s, float64(elapsed.Nanoseconds())/float64(1000000))
+}
+
 func QuickSort(a []int) {
 	sort(a, 0, len(a))
 }
