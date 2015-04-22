@@ -2,9 +2,12 @@
 #### Golang Madness
 Mike learns to Go! A journey from Java to Golang.
 * Practices with Golang
-    * Closest pairs
     * Prime sieves
-    * Counting inversions (similarity, left, right and split inversions)
+    * Algorithms refresh
+    	* Counting inversions (similarity, left, right and split inversions)
+    	* Closest pairs
+    	* randomized quick sort util
+    * concurrency patterns `Runner`, `Pool` and `Worker` from  Go in Action
 * A take on `ByteBuffer/StringBuilder` and `slice/bytes.Buffer`
 	* fix-sized `ByteBuffer` vs. dynamically sized `slice`
 	* panic with error vs. multiple return values including error
