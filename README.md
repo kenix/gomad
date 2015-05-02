@@ -19,3 +19,4 @@ Mike learns to Go! A journey from Java to Golang.
 * TCP communication in Golang
 	* infinite data server (financial ticks)
 	* data client
+* Simple key-block database - sdb
