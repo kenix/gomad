@@ -1,5 +1,8 @@
 # gomad
 #### Golang Madness
+
+[![Build Status](https://travis-ci.org/kenix/gomad.svg)](https://travis-ci.org/kenix/gomad)
+
 Mike learns to Go! A journey from Java to Golang.
 * Practices with Golang
     * Prime sieves
