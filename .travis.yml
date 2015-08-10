@@ -1,4 +1,4 @@
 language: go
-script: go test && go test -bench=.
+script: go test ./...
 notifications:
     email: false
